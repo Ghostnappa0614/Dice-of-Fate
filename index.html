@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dice of Fate — IT Edition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: rgba(255,255,255,0.08);
+      --border2: rgba(255,255,255,0.14);
+      --text: #f0f2ff;
+      --text2: #8b90a8;
+      --text3: #555a72;
+      --accent: #6c63ff;
+      --accent-dim: rgba(108,99,255,0.15);
+      --accent-glow: rgba(108,99,255,0.35);
+      --success: #3ecf8e;
+      --danger: #ff5c5c;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Inter', sans-serif;
+      --radius: 14px;
+      --radius-sm: 8px;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Background scrolling phrases */
+    .bg-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .bg-phrase {
+      position: absolute;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text);
+      white-space: nowrap;
+      opacity: 0;
+      animation: drift linear infinite;
+    }
+
+    @keyframes drift {
+      0%   { opacity: 0; transform: translateY(0) rotate(var(--rot)); }
+      10%  { opacity: var(--max-op); }
+      90%  { opacity: var(--max-op); }
+      100% { opacity: 0; transform: translateY(-60px) rotate(var(--rot)); }
+    }
+
+    /* Main card */
+    .card {
+      position: relative;
+      z-index: 1;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 24px;
+      padding: 2.5rem 2rem;
+      width: min(420px, 95vw);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    /* Header */
+    .header { text-align: center; }
+    .header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .header p {
+      font-size: 13px;
+      color: var(--text2);
+      font-style: italic;
+    }
+
+    /* Die */
+    .die-wrap { cursor: pointer; }
+    .die {
+      width: 110px;
+      height: 110px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 52px;
+      font-weight: 600;
+      color: var(--text);
+      user-select: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .die-wrap:hover .die {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+    .die.rolling {
+      animation: shake 0.55s ease-out;
+    }
+    @keyframes shake {
+      0%   { transform: rotate(0deg) scale(1); }
+      15%  { transform: rotate(-14deg) scale(1.06); }
+      35%  { transform: rotate(11deg) scale(0.96); }
+      55%  { transform: rotate(-7deg) scale(1.03); }
+      75%  { transform: rotate(4deg) scale(0.98); }
+      100% { transform: rotate(0deg) scale(1); }
+    }
+
+    /* Roll button */
+    .roll-btn {
+      width: 100%;
+      padding: 12px;
+      font-family: var(--sans);
+      font-size: 15px;
+      font-weight: 500;
+      color: #fff;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .roll-btn:hover { opacity: 0.88; }
+    .roll-btn:active { transform: scale(0.98); }
+
+    /* Result */
+    .result-card {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      text-align: center;
+      min-height: 96px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .result-num {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text3);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .result-text {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.4;
+    }
+    .result-flavor {
+      font-size: 12px;
+      color: var(--text2);
+      font-style: italic;
+    }
+    .result-placeholder {
+      font-size: 14px;
+      color: var(--text3);
+    }
+
+    /* Copy button */
+    .copy-area {
+      width: 100%;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .copy-area.visible { display: flex; }
+    .copy-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 20px;
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+      background: var(--accent-dim);
+      border: 1px solid var(--accent-glow);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .copy-btn:hover { background: rgba(108,99,255,0.25); }
+    .copy-btn i { font-size: 15px; }
+    .copy-toast {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--success);
+      height: 14px;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+    .copy-toast.show { opacity: 1; }
+
+    /* History */
+    .history-section { width: 100%; }
+    .history-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text3);
+      margin-bottom: 8px;
+    }
+    .history-list { display: flex; flex-direction: column; gap: 5px; }
+    .history-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: 13px;
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: opacity 0.3s;
+    }
+    .history-num {
+      font-family: var(--mono);
+      font-size: 15px;
+      color: var(--text3);
+      flex-shrink: 0;
+      width: 18px;
+      text-align: center;
+    }
+
+    /* Divider */
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: var(--border);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .die.rolling, .bg-phrase { animation: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-canvas" id="bg-canvas" aria-hidden="true"></div>
+
+<main class="card" role="main">
+  <div class="header">
+    <h1>🎲 Dice of Fate</h1>
+    <p>The IT gods are always listening...</p>
+  </div>
+
+  <div class="die-wrap" onclick="rollDice()" title="Click to roll">
+    <div class="die" id="die">?</div>
+  </div>
+
+  <button class="roll-btn" onclick="rollDice()">Roll &amp; accept your fate</button>
+
+  <div class="result-card" id="result-card">
+    <span class="result-placeholder">Click the die or button to roll...</span>
+  </div>
+
+  <div class="copy-area" id="copy-area">
+    <button class="copy-btn" id="copy-btn" onclick="copyFate()">
+      <i class="ti ti-copy" aria-hidden="true"></i> Copy for Teams
+    </button>
+    <span class="copy-toast" id="copy-toast">✓ Copied to clipboard</span>
+  </div>
+
+  <div class="divider" id="history-divider" style="display:none;"></div>
+
+  <div class="history-section" id="history-section" style="display:none;">
+    <div class="history-label">Recent rolls</div>
+    <div class="history-list" id="history-list"></div>
+  </div>
+</main>
+
+<script>
+const outcomes = [
+  { num: 1, text: "All calls go to you",                       flavor: "Every. Single. One. The gods have forwarded them all." },
+  { num: 2, text: "Reset your phone",                          flavor: "Start fresh. Lose everything. As the gods intended." },
+  { num: 3, text: "Switch to the opposite OS",                 flavor: "Mac user? Congrats, you're on Windows. Windows? Welcome to Mac. Godspeed." },
+  { num: 4, text: "Surplus by yourself",                       flavor: "Just you, a cart, and a warehouse of forgotten equipment. No help coming." },
+  { num: 5, text: "Ask Brendan Greer how his day is going",    flavor: "You must ask. You must listen to the full answer." },
+  { num: 6, text: "-25% customer service",                     flavor: "You are operating at 75% hospitality. The gods have reduced your warmth." }
+];
+
+const forbidden = [
+  "it's been quiet today", "it's so slow right now", "we haven't had many calls",
+  "nobody's calling in", "things are really slow", "it's been dead all day",
+  "not many tickets coming in", "it's been pretty chill", "we're caught up on everything",
+  "there's nothing in the queue", "the phones aren't ringing", "today's been easy",
+  "hardly anyone has called", "it's unusually quiet", "not a lot going on",
+  "we might get out early", "nobody needs help today", "the queue is empty",
+  "I haven't gotten a call in hours", "it's been slow all morning",
+  "this is the calmest day we've had", "I'm bored, nothing is coming in",
+  "the tickets are all closed", "no one has any issues today",
+  "I could take a nap right now", "we're ahead of schedule",
+  "maybe it'll stay like this", "hopefully it stays slow",
+  "it's been a slow afternoon", "the help desk is dead",
+  "there's barely any volume", "we've cleared everything out",
+  "zero tickets in the queue", "users are figuring it out themselves",
+  "low call volume today", "it's been a light day",
+  "we might not get any more calls", "nothing's broken today",
+  "everyone must be on vacation", "IT is finally under control",
+  "no major incidents today", "nothing critical has come in",
+  "seems like a quiet Friday", "this never happens",
+  "I think we're good for the day", "things have really calmed down",
+  "the rush must be over", "nobody's putting in tickets",
+];
+
+function buildBackground() {
+  const canvas = document.getElementById('bg-canvas');
+  const count = 40;
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('span');
+    el.className = 'bg-phrase';
+    el.textContent = '"' + forbidden[i % forbidden.length] + '"';
+    const left = Math.random() * 105 - 2;
+    const top = Math.random() * 105;
+    const rot = (Math.random() * 30 - 15).toFixed(1);
+    const dur = (18 + Math.random() * 20).toFixed(1);
+    const delay = -(Math.random() * 30).toFixed(1);
+    const maxOp = (0.18 + Math.random() * 0.12).toFixed(2);
+    el.style.cssText = `left:${left}%;top:${top}%;--rot:${rot}deg;--max-op:${maxOp};animation-duration:${dur}s;animation-delay:${delay}s;`;
+    canvas.appendChild(el);
+  }
+}
+
+let rolling = false;
+let lastOutcome = null;
+const history = [];
+
+// Shuffled deck — guarantees every outcome appears once before any repeats
+let deck = [];
+function getNextOutcome() {
+  if (deck.length === 0) {
+    deck = [...outcomes];
+    // Fisher-Yates shuffle
+    for (let i = deck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+  }
+  return deck.pop();
+}
+
+function rollDice() {
+  if (rolling) return;
+  rolling = true;
+  const die = document.getElementById('die');
+  die.classList.add('rolling');
+  resetCopy();
+
+  let ticks = 0;
+  const interval = setInterval(() => {
+    die.textContent = Math.floor(Math.random() * 6) + 1;
+    ticks++;
+    if (ticks > 14) {
+      clearInterval(interval);
+      const outcome = getNextOutcome();
+      die.textContent = outcome.num;
+      setTimeout(() => die.classList.remove('rolling'), 50);
+      rolling = false;
+      lastOutcome = outcome;
+      showResult(outcome);
+      document.getElementById('copy-area').classList.add('visible');
+    }
+  }, 55);
+}
+
+function showResult(outcome) {
+  document.getElementById('result-card').innerHTML = `
+    <span class="result-num">I rolled a ${outcome.num}</span>
+    <span class="result-text">${outcome.text}</span>
+    <span class="result-flavor">${outcome.flavor}</span>
+  `;
+  history.unshift(outcome);
+  if (history.length > 4) history.pop();
+  renderHistory();
+}
+
+function copyFate() {
+  if (!lastOutcome) return;
+  const text = `🎲 I rolled a ${lastOutcome.num} — ${lastOutcome.text}\n${lastOutcome.flavor}`;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    const toast = document.getElementById('copy-toast');
+    btn.innerHTML = '<i class="ti ti-check" aria-hidden="true"></i> Copied!';
+    toast.classList.add('show');
+    setTimeout(() => {
+      btn.innerHTML = '<i class="ti ti-copy" aria-hidden="true"></i> Copy for Teams';
+      toast.classList.remove('show');
+    }, 2500);
+  });
+}
+
+function resetCopy() {
+  const btn = document.getElementById('copy-btn');
+  if (btn) btn.innerHTML = '<i class="ti ti-copy" aria-hidden="true"></i> Copy for Teams';
+  document.getElementById('copy-toast').classList.remove('show');
+}
+
+function renderHistory() {
+  const section = document.getElementById('history-section');
+  const divider = document.getElementById('history-divider');
+  const list = document.getElementById('history-list');
+  if (!history.length) {
+    section.style.display = 'none';
+    divider.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+  divider.style.display = 'block';
+  list.innerHTML = history.map((h, i) => `
+    <div class="history-item" style="opacity:${(1 - i * 0.2).toFixed(1)}">
+      <span class="history-num">${h.num}</span>
+      <span>${h.text}</span>
+    </div>
+  `).join('');
+}
+
+buildBackground();
+</script>
+</body>
+</html>
